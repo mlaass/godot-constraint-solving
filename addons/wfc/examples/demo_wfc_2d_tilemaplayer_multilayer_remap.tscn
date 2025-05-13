@@ -1,10 +1,10 @@
 [gd_scene load_steps=11 format=4 uid="uid://k4muatqktgaf"]
 
-[ext_resource type="Script" path="res://addons/wfc/nodes/generator_2d.gd" id="1_b0ng4"]
+[ext_resource type="Script" uid="uid://d3jxh40rncv1r" path="res://addons/wfc/nodes/generator_2d.gd" id="1_b0ng4"]
 [ext_resource type="PackedScene" uid="uid://dt2nffs32s7o1" path="res://addons/wfc/examples/helpers/progress_indicator.tscn" id="2_q61t2"]
-[ext_resource type="Script" path="res://addons/wfc/problems/2d/preconditions/precondition_2d_remap_by_map.gd" id="2_y17i0"]
-[ext_resource type="Script" path="res://addons/wfc/nodes/layered_map_2d.gd" id="3_ly23c"]
-[ext_resource type="Script" path="res://addons/wfc/problems/2d/mappers/mapper_2d_factory.gd" id="4_214s1"]
+[ext_resource type="Script" uid="uid://bwtjkmti2cwmq" path="res://addons/wfc/problems/2d/preconditions/precondition_2d_remap_by_map.gd" id="2_y17i0"]
+[ext_resource type="Script" uid="uid://dlvefworyj0lx" path="res://addons/wfc/nodes/layered_map_2d.gd" id="3_ly23c"]
+[ext_resource type="Script" uid="uid://chh3un2fwqum1" path="res://addons/wfc/problems/2d/mappers/mapper_2d_factory.gd" id="4_214s1"]
 [ext_resource type="TileSet" uid="uid://f5ab14o2k2wy" path="res://addons/wfc/examples/assets/kenney-tiny-dungeon/tile-set-main.tres" id="5_mesqy"]
 [ext_resource type="TileSet" uid="uid://drvu3d0pwtf50" path="res://addons/wfc/examples/assets/kenney-tiny-dungeon/tile-set-decorations.tres" id="6_cv058"]
 

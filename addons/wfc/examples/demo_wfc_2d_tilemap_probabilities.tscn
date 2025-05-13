@@ -1,8 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://hje2bdj7a5l4"]
+[gd_scene load_steps=10 format=3 uid="uid://hje2bdj7a5l4"]
 
-[ext_resource type="Script" path="res://addons/wfc/nodes/generator_2d.gd" id="1_wgtgl"]
-[ext_resource type="Script" path="res://addons/wfc/runners/runner_multithreaded_settings.gd" id="2_dcepd"]
-[ext_resource type="Script" path="res://addons/wfc/problems/2d/rules_2d.gd" id="3_h6f3l"]
+[ext_resource type="Script" uid="uid://d3jxh40rncv1r" path="res://addons/wfc/nodes/generator_2d.gd" id="1_wgtgl"]
+[ext_resource type="Script" uid="uid://daetgorj4aieu" path="res://addons/wfc/runners/runner_multithreaded_settings.gd" id="2_dcepd"]
+[ext_resource type="Script" uid="uid://srgffs7aq5sf" path="res://addons/wfc/problems/2d/rules_2d.gd" id="3_h6f3l"]
+[ext_resource type="Script" uid="uid://dha32s30kh1sb" path="res://addons/wfc/utils/bitmatrix.gd" id="3_j1j0w"]
 [ext_resource type="TileSet" uid="uid://dgefkshuslimj" path="res://addons/wfc/examples/assets/kenney-tiny-dungeon/tile-set.tres" id="3_p2feb"]
 
 [sub_resource type="GDScript" id="GDScript_sq3cg"]
@@ -23,7 +24,7 @@ max_threads = -1
 script = ExtResource("3_h6f3l")
 complete_matrices = true
 axes = Array[Vector2i]([Vector2i(0, 1), Vector2i(1, 0)])
-axis_matrices = Array[Resource("res://addons/wfc/utils/bitmatrix.gd")]([])
+axis_matrices = Array[ExtResource("3_j1j0w")]([])
 probabilities = []
 probabilities_enabled = false
 edge_condition_meta_name = "wfc_edge"

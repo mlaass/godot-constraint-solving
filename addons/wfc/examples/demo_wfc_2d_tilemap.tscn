@@ -1,8 +1,8 @@
 [gd_scene load_steps=7 format=3 uid="uid://cgk72c7csqgm5"]
 
 [ext_resource type="TileSet" uid="uid://dgefkshuslimj" path="res://addons/wfc/examples/assets/kenney-tiny-dungeon/tile-set.tres" id="1_pba0u"]
-[ext_resource type="Script" path="res://addons/wfc/nodes/generator_2d.gd" id="2_rmjmh"]
-[ext_resource type="Script" path="res://addons/wfc/runners/runner_multithreaded_settings.gd" id="3_iuw6v"]
+[ext_resource type="Script" uid="uid://d3jxh40rncv1r" path="res://addons/wfc/nodes/generator_2d.gd" id="2_rmjmh"]
+[ext_resource type="Script" uid="uid://daetgorj4aieu" path="res://addons/wfc/runners/runner_multithreaded_settings.gd" id="3_iuw6v"]
 [ext_resource type="PackedScene" uid="uid://dt2nffs32s7o1" path="res://addons/wfc/examples/helpers/progress_indicator.tscn" id="4_p2jtg"]
 
 [sub_resource type="GDScript" id="GDScript_sq3cg"]
