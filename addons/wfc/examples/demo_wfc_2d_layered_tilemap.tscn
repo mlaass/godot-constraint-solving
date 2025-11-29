@@ -12,32 +12,26 @@
 script/source = "extends Node2D
 
 func _ready():
-	$generator.start()
-	$sample.hide()
-	$negative_sample.hide()
-	$target.show()
+  $generator.start()
+  $sample.hide()
+  $negative_sample.hide()
+  $target.show()
+
+func _input(event: InputEvent):
+  if event.is_action_pressed(\"ui_cancel\"):
+    get_tree().quit()
 "
 
 [sub_resource type="Resource" id="Resource_4anm6"]
 script = ExtResource("2_qtvm1")
-attrs_to_id = {}
 layers = Array[int]([0, 2])
-use_builtin_probabilities = true
-probability_meta_key = "wfc_probability"
 
 [sub_resource type="Resource" id="Resource_fk53x"]
 script = ExtResource("3_t7txd")
 mapper = SubResource("Resource_4anm6")
-complete_matrices = true
-axes = Array[Vector2i]([Vector2i(0, 1), Vector2i(1, 0)])
-axis_matrices = Array[ExtResource("2_v8qpj")]([])
-probabilities = []
-probabilities_enabled = true
-edge_condition_meta_name = "wfc_edge"
 
 [sub_resource type="Resource" id="Resource_uafrt"]
 script = ExtResource("2_uvgvv")
-max_threads = -1
 
 [node name="wfc_tilemap" type="Node2D"]
 script = SubResource("GDScript_sq3cg")
@@ -50,7 +44,8 @@ rules = SubResource("Resource_fk53x")
 positive_sample = NodePath("../sample")
 negative_sample = NodePath("../negative_sample")
 multithreaded_runner_settings = SubResource("Resource_uafrt")
-render_intermediate_results = true
+render_intermediate_results = false
+update_interval_ms = 100
 
 [node name="sample" type="TileMap" parent="."]
 tile_set = ExtResource("3_6hook")

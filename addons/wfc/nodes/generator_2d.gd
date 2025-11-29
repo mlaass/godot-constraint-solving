@@ -94,6 +94,11 @@ var render_intermediate_results: bool = false
 @export_category("Debug mode")
 var print_rules: bool = false
 
+## Interval in milliseconds between runner updates. 0 = update every frame.
+## Higher values reduce overhead for faster generation at the cost of less responsive progress updates.
+@export_range(0, 1000)
+var update_interval_ms: int = 0
+
 ## Emited when the generator starts generating map.
 signal started
 
@@ -101,6 +106,8 @@ signal started
 signal done
 
 var _runner: WFCSolverRunner = null
+var _generation_start_time_ms: int = 0
+var _last_update_time_ms: int = 0
 
 func _create_runner() -> WFCSolverRunner:
 	if use_multithreading:
@@ -174,6 +181,8 @@ func start():
 	assert(target != null)
 	assert(rect.has_area())
 
+	_generation_start_time_ms = Time.get_ticks_msec()
+
 	var target_node: Node = get_node(target)
 	assert(target_node != null)
 
@@ -225,7 +234,7 @@ func start():
 
 	_runner.start(problem)
 
-	_runner.all_solved.connect(func(): done.emit())
+	_runner.all_solved.connect(_on_all_solved)
 	_runner.sub_problem_solved.connect(_on_solved)
 	_runner.partial_solution.connect(_on_partial_solution)
 
@@ -239,13 +248,27 @@ func _on_partial_solution(problem: WFC2DProblem, state: WFCSolverState):
 
 	_on_solved(problem, state)
 
+func _on_all_solved():
+	var duration_ms := Time.get_ticks_msec() - _generation_start_time_ms
+	var cell_count := rect.size.x * rect.size.y
+	print("WFC Generation complete:")
+	print("  Map size: %d x %d (%d cells)" % [rect.size.x, rect.size.y, cell_count])
+	print("  Time: %d ms" % duration_ms)
+	done.emit()
+
 func _ready():
 	if start_on_ready:
 		start()
 
 func _process(_delta):
 	if _runner != null and _runner.is_running():
-		_runner.update()
+		if update_interval_ms == 0:
+			_runner.update()
+		else:
+			var now := Time.get_ticks_msec()
+			if now - _last_update_time_ms >= update_interval_ms:
+				_last_update_time_ms = now
+				_runner.update()
 
 ## Returns generation progress.
 ## [br]

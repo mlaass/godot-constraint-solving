@@ -18,9 +18,9 @@ Features:
   Or stop the generator from searching for additional cell combinations and provide all possible combinations in the initial example.
   Rules can also in some cases be learned from terrain settings of tilesets used in `TileMapLayer` maps.
 - Supports **different node types**:
-	- `TileMapLayer` and `TileMap` (including some **hexagonal** tilemaps, see [example](addons/wfc/examples/demo_wfc_2d_hex_tilemap.tscn))
-	- `GridMap` (a flat map in one of XY/YZ/XZ planes can be generated)
-	- Support of other node types can be added.
+  - `TileMapLayer` and `TileMap` (including some **hexagonal** tilemaps, see [example](addons/wfc/examples/demo_wfc_2d_hex_tilemap.tscn))
+  - `GridMap` (a flat map in one of XY/YZ/XZ planes can be generated)
+  - Support of other node types can be added.
 - Supports tile **probabilities**.
   Probabilities of specific tiles can be adjusted.
   In case of `TileMap(Layer)`, a builtin probability property or a custom data layer can be used.
