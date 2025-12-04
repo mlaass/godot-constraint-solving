@@ -17,7 +17,6 @@ func _ready():
 
 [sub_resource type="Resource" id="Resource_uafrt"]
 script = ExtResource("3_iuw6v")
-max_threads = -1
 
 [node name="wfc_tilemap" type="Node2D"]
 script = SubResource("GDScript_sq3cg")
@@ -29,6 +28,7 @@ rect = Rect2i(0, 0, 121, 68)
 positive_sample = NodePath("../sample")
 negative_sample = NodePath("../negative_sample")
 multithreaded_runner_settings = SubResource("Resource_uafrt")
+use_multithreading = false
 render_intermediate_results = true
 
 [node name="sample" type="TileMap" parent="."]

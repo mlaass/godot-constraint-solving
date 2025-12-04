@@ -2,6 +2,8 @@ class_name WFC2DGenerator
 ## Generates content of a map (TileMap or GridMap) using WFC algorithm.
 extends Node
 
+const WFCNativeSolverRunner = preload("res://addons/wfc/runners/runner_native.gd")
+
 ## A map that will be filled using WFC algorithm.
 @export_node_path("TileMap", "GridMap", "TileMapLayer", "WFC2DLayeredMap")
 var target: NodePath
@@ -71,6 +73,14 @@ var main_thread_runner_settings: WFCMainThreadRunnerSettings = WFCMainThreadRunn
 @export
 var use_multithreading: bool = true
 
+## If enabled, use the native C++ solver instead of the GDScript implementation.
+## The native solver is faster but requires the native extension to be loaded.
+## Falls back to GDScript if native extension is not available.
+## [br]
+## Note: When enabled, [member use_multithreading] is ignored (native solver runs on main thread).
+@export
+var use_native_solver: bool = false
+
 ## If enabled, the generator will start WFC as soon as it is ready (i.e. literally in
 ## [method Node._ready]).
 @export
@@ -109,67 +119,82 @@ var _runner: WFCSolverRunner = null
 var _generation_start_time_ms: int = 0
 var _last_update_time_ms: int = 0
 
+func _is_native_available() -> bool:
+  return ClassDB.class_exists("WFCSolverNative") and \
+       ClassDB.class_exists("WFC2DProblemNative") and \
+       ClassDB.class_exists("WFCRules2DNative")
+
 func _create_runner() -> WFCSolverRunner:
-	if use_multithreading:
-		var res: WFCMultithreadedSolverRunner = WFCMultithreadedSolverRunner.new()
+  if use_native_solver:
+    if not _is_native_available():
+      push_warning("Native solver not available, falling back to GDScript")
+    else:
+      var res: WFCNativeSolverRunner = WFCNativeSolverRunner.new()
+      if main_thread_runner_settings != null:
+        res.runner_settings = main_thread_runner_settings
+      res.solver_settings = solver_settings
+      return res
 
-		if multithreaded_runner_settings != null:
-			res.runner_settings = multithreaded_runner_settings
+  if use_multithreading:
+    var res: WFCMultithreadedSolverRunner = WFCMultithreadedSolverRunner.new()
 
-		res.solver_settings = solver_settings
-		return res
-	else:
-		var res: WFCMainThreadSolverRunner = WFCMainThreadSolverRunner.new()
+    if multithreaded_runner_settings != null:
+      res.runner_settings = multithreaded_runner_settings
 
-		if main_thread_runner_settings != null:
-			res.runner_settings = main_thread_runner_settings
+    res.solver_settings = solver_settings
+    return res
+  else:
+    var res: WFCMainThreadSolverRunner = WFCMainThreadSolverRunner.new()
 
-		res.solver_settings = solver_settings
-		return res
+    if main_thread_runner_settings != null:
+      res.runner_settings = main_thread_runner_settings
+
+    res.solver_settings = solver_settings
+    return res
 
 ## Creates a mapper for given [param map] node.
 ## [br]
 ## Called when mapper is not provided in [member rules].
 func _create_mapper(map: Node) -> WFCMapper2D:
-	var mapper := mapper_factory.create_mapper_for(map)
+  var mapper := mapper_factory.create_mapper_for(map)
 
-	if mapper == null:
-		var script: Script = map.get_script()
-		push_error("Unsupported map node type: %s (%s)" % [
-			map.get_class(),
-			 "No script" if script == null else (
-				script.get_global_name() if not script.get_global_name().is_empty() else script.resource_path
-			)])
-		@warning_ignore("assert_always_false")
-		assert(false)
+  if mapper == null:
+    var script: Script = map.get_script()
+    push_error("Unsupported map node type: %s (%s)" % [
+      map.get_class(),
+       "No script" if script == null else (
+        script.get_global_name() if not script.get_global_name().is_empty() else script.resource_path
+      )])
+    @warning_ignore("assert_always_false")
+    assert(false)
 
-	return mapper
+  return mapper
 
 func _create_precondition(problem_settings: WFC2DProblem.WFC2DProblemSettings, map: Node) -> WFC2DPrecondition:
-	var settings: WFC2DPrecondition2DNullSettings = self.precondition
+  var settings: WFC2DPrecondition2DNullSettings = self.precondition
 
-	if settings == null:
-		settings = WFC2DPreconditionReadExistingSettings.new()
+  if settings == null:
+    settings = WFC2DPreconditionReadExistingSettings.new()
 
-	var parameters: WFC2DPrecondition2DNullSettings.CreationParameters = WFC2DPrecondition2DNullSettings.CreationParameters.new()
+  var parameters: WFC2DPrecondition2DNullSettings.CreationParameters = WFC2DPrecondition2DNullSettings.CreationParameters.new()
 
-	parameters.target_node = map
-	parameters.problem_settings = problem_settings
-	parameters.generator_node = self
+  parameters.target_node = map
+  parameters.problem_settings = problem_settings
+  parameters.generator_node = self
 
-	return settings.create_precondition(parameters)
+  return settings.create_precondition(parameters)
 
 func _create_problem(
-	settings: WFC2DProblem.WFC2DProblemSettings,
-	map: Node,
-	precondition: WFC2DPrecondition
+  settings: WFC2DProblem.WFC2DProblemSettings,
+  map: Node,
+  precondition: WFC2DPrecondition
 ) -> WFC2DProblem:
-	return WFC2DProblem.new(settings, map, precondition)
+  return WFC2DProblem.new(settings, map, precondition)
 
 func _exit_tree():
-	if _runner != null:
-		_runner.interrupt()
-		_runner = null
+  if _runner != null:
+    _runner.interrupt()
+    _runner = null
 
 ## Starts generation.
 ## [br]
@@ -177,98 +202,98 @@ func _exit_tree():
 ## [br]
 ## Should not be called manually when [member start_on_ready] is [code]true[/code].
 func start():
-	assert(_runner == null)
-	assert(target != null)
-	assert(rect.has_area())
+  assert(_runner == null)
+  assert(target != null)
+  assert(rect.has_area())
 
-	_generation_start_time_ms = Time.get_ticks_msec()
+  _generation_start_time_ms = Time.get_ticks_msec()
 
-	var target_node: Node = get_node(target)
-	assert(target_node != null)
+  var target_node: Node = get_node(target)
+  assert(target_node != null)
 
-	if not rules.is_ready():
-		assert(positive_sample != null)
+  if not rules.is_ready():
+    assert(positive_sample != null)
 
-		var positive_sample_node: Node = get_node(positive_sample)
-		assert(positive_sample_node != null)
+    var positive_sample_node: Node = get_node(positive_sample)
+    assert(positive_sample_node != null)
 
-		if rules == null:
-			rules = WFCRules2D.new()
-		else:
-			rules = rules.duplicate(false) as WFCRules2D
+    if rules == null:
+      rules = WFCRules2D.new()
+    else:
+      rules = rules.duplicate(false) as WFCRules2D
 
-			assert(rules != null)
+      assert(rules != null)
 
-		if rules.mapper == null:
-			rules.mapper = _create_mapper(target_node)
-		if not rules.mapper.is_ready():
-			rules.mapper.learn_from(positive_sample_node)
-		rules.learn_from(positive_sample_node)
+    if rules.mapper == null:
+      rules.mapper = _create_mapper(target_node)
+    if not rules.mapper.is_ready():
+      rules.mapper.learn_from(positive_sample_node)
+    rules.learn_from(positive_sample_node)
 
-		if rules.complete_matrices and negative_sample != null and not negative_sample.is_empty():
-			var negative_sample_node: Node = get_node(negative_sample)
+    if rules.complete_matrices and negative_sample != null and not negative_sample.is_empty():
+      var negative_sample_node: Node = get_node(negative_sample)
 
-			if negative_sample_node != null:
-				rules.learn_negative_from(negative_sample_node)
+      if negative_sample_node != null:
+        rules.learn_negative_from(negative_sample_node)
 
-		if print_rules and OS.is_debug_build():
-			print_debug('Rules learned:\n', rules.format())
+    if print_rules and OS.is_debug_build():
+      print_debug('Rules learned:\n', rules.format())
 
-			print_debug('Influence range: ', rules.get_influence_range())
+      print_debug('Influence range: ', rules.get_influence_range())
 
-	var problem_settings: WFC2DProblem.WFC2DProblemSettings = WFC2DProblem.WFC2DProblemSettings.new()
+  var problem_settings: WFC2DProblem.WFC2DProblemSettings = WFC2DProblem.WFC2DProblemSettings.new()
 
-	problem_settings.rules = rules
-	problem_settings.rect = rect
+  problem_settings.rules = rules
+  problem_settings.rect = rect
 
-	var precondition: WFC2DPrecondition = _create_precondition(problem_settings, target_node)
+  var precondition: WFC2DPrecondition = _create_precondition(problem_settings, target_node)
 
-	started.emit()
+  started.emit()
 
-	# TODO: Call this in separate thread if long-running generators will be used to generate preconditions
-	precondition.prepare()
+  # TODO: Call this in separate thread if long-running generators will be used to generate preconditions
+  precondition.prepare()
 
-	var problem: WFC2DProblem = _create_problem(problem_settings, target_node, precondition)
+  var problem: WFC2DProblem = _create_problem(problem_settings, target_node, precondition)
 
-	_runner = _create_runner()
+  _runner = _create_runner()
 
-	_runner.start(problem)
+  _runner.start(problem)
 
-	_runner.all_solved.connect(_on_all_solved)
-	_runner.sub_problem_solved.connect(_on_solved)
-	_runner.partial_solution.connect(_on_partial_solution)
+  _runner.all_solved.connect(_on_all_solved)
+  _runner.sub_problem_solved.connect(_on_solved)
+  _runner.partial_solution.connect(_on_partial_solution)
 
 func _on_solved(problem: WFC2DProblem, state: WFCSolverState):
-	if state != null:
-		problem.render_state_to_map(state)
+  if state != null:
+    problem.render_state_to_map(state)
 
 func _on_partial_solution(problem: WFC2DProblem, state: WFCSolverState):
-	if not render_intermediate_results:
-		return
+  if not render_intermediate_results:
+    return
 
-	_on_solved(problem, state)
+  _on_solved(problem, state)
 
 func _on_all_solved():
-	var duration_ms := Time.get_ticks_msec() - _generation_start_time_ms
-	var cell_count := rect.size.x * rect.size.y
-	print("WFC Generation complete:")
-	print("  Map size: %d x %d (%d cells)" % [rect.size.x, rect.size.y, cell_count])
-	print("  Time: %d ms" % duration_ms)
-	done.emit()
+  var duration_ms := Time.get_ticks_msec() - _generation_start_time_ms
+  var cell_count := rect.size.x * rect.size.y
+  print("WFC Generation complete:")
+  print("  Map size: %d x %d (%d cells)" % [rect.size.x, rect.size.y, cell_count])
+  print("  Time: %d ms" % duration_ms)
+  done.emit()
 
 func _ready():
-	if start_on_ready:
-		start()
+  if start_on_ready:
+    start()
 
 func _process(_delta):
-	if _runner != null and _runner.is_running():
-		if update_interval_ms == 0:
-			_runner.update()
-		else:
-			var now := Time.get_ticks_msec()
-			if now - _last_update_time_ms >= update_interval_ms:
-				_last_update_time_ms = now
-				_runner.update()
+  if _runner != null and _runner.is_running():
+    if update_interval_ms == 0:
+      _runner.update()
+    else:
+      var now := Time.get_ticks_msec()
+      if now - _last_update_time_ms >= update_interval_ms:
+        _last_update_time_ms = now
+        _runner.update()
 
 ## Returns generation progress.
 ## [br]
@@ -277,23 +302,23 @@ func _process(_delta):
 ## [br]
 ## Returns [code]0.0[/code] if generation was not yet started.
 func get_progress() -> float:
-	if _runner == null:
-		return 0
+  if _runner == null:
+    return 0
 
-	return _runner.get_progress()
+  return _runner.get_progress()
 
 ## Returns [code]true[/code] iff any solver is currently running.
 func is_running() -> bool:
-	if _runner == null:
-		return false
+  if _runner == null:
+    return false
 
-	return _runner.is_running()
+  return _runner.is_running()
 
 ## Resets this generator to it's initial state.
 ## [br]
 ## Stops any running solver(s), if any.
 func reset():
-	if _runner != null:
-		if _runner.is_running():
-			_runner.interrupt()
-		_runner = null
+  if _runner != null:
+    if _runner.is_running():
+      _runner.interrupt()
+    _runner = null

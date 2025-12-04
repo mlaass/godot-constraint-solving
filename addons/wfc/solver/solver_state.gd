@@ -14,7 +14,7 @@ var cell_domains: Array[WFCBitSet]
 
 """
 i'th element of cell_solution_or_entropy contains either:
-	- a negated "entropy" value, -(number_of_options - 1) if there are multiple options
+  - a negated "entropy" value, -(number_of_options - 1) if there are multiple options
 		for the i'th cell. Value is always negative in this case.
 		Note: it's not a real entropy value: log(number_of_options) would be closer to
 			the real entropy.

@@ -1,0 +1,132 @@
+import os
+import sys
+import SCons.Script
+
+# Initialize environment
+env = SCons.Script.Environment()
+
+# Platform detection with argument override
+platform = ARGUMENTS.get("platform", "")
+if not platform:
+    if sys.platform == "win32":
+        platform = "windows"
+    elif sys.platform == "darwin":
+        platform = "macos"
+    else:
+        platform = "linux"
+
+env["platform"] = platform
+
+# Set target based on environment variable or default to release
+env["target"] = ARGUMENTS.get("target", "release")
+
+# Architecture (for cross-compilation support)
+arch = ARGUMENTS.get("arch", "x86_64")
+
+# Path to godot-cpp (relative to addons/wfc_native_src/)
+godot_cpp_path = "../../../godot-cpp"
+
+# Add include paths
+env.Append(CPPPATH=[
+    godot_cpp_path + "/include/",
+    godot_cpp_path + "/gen/include/",
+    godot_cpp_path + "/gdextension/",
+    "src/",
+])
+
+# Platform-specific settings
+if env["platform"] == "windows":
+    import platform as plat
+    if plat.system() == "Windows":
+        env["CXX"] = "g++"
+        env["CC"] = "gcc"
+        env["AR"] = "ar"
+        env["RANLIB"] = "ranlib"
+        env["LINK"] = "g++"
+    else:
+        env["CXX"] = "x86_64-w64-mingw32-g++"
+        env["CC"] = "x86_64-w64-mingw32-gcc"
+        env["AR"] = "x86_64-w64-mingw32-ar"
+        env["RANLIB"] = "x86_64-w64-mingw32-ranlib"
+        env["LINK"] = "x86_64-w64-mingw32-g++"
+
+    env.Append(CCFLAGS=["-std=c++17", "-fexceptions"])
+    env.Append(LINKFLAGS=["-static-libgcc", "-static-libstdc++", "-static"])
+
+    if env["target"] == "debug":
+        env.Append(CCFLAGS=["-g", "-O0"])
+    else:
+        env.Append(CCFLAGS=["-O3"])
+
+    lib_suffix = f".{arch}"
+    shared_lib_extension = ".dll"
+
+elif env["platform"] == "macos":
+    env.Append(CCFLAGS=["-std=c++17", "-fexceptions"])
+    if env["target"] == "debug":
+        env.Append(CCFLAGS=["-g", "-O0"])
+    else:
+        env.Append(CCFLAGS=["-O3"])
+
+    lib_suffix = ""
+    shared_lib_extension = ".dylib"
+
+else:  # Linux
+    env.Append(CCFLAGS=["-std=c++17", "-fexceptions", "-fPIC"])
+    if env["target"] == "debug":
+        env.Append(CCFLAGS=["-g", "-O0"])
+    else:
+        env.Append(CCFLAGS=["-O3"])
+
+    lib_suffix = f".{arch}"
+    shared_lib_extension = ".so"
+
+# Add library paths
+env.Append(LIBPATH=[godot_cpp_path + "/bin/"])
+
+# Platform-specific library linking
+if env["platform"] == "macos":
+    lib_suffix_for_linking = ""
+else:
+    lib_suffix_for_linking = lib_suffix
+
+# Link against godot-cpp library (uses template_ prefix in its naming)
+godot_cpp_target = f"template_{env['target']}" if env['target'] in ['release', 'debug'] else env['target']
+env.Append(LIBS=[f"godot-cpp.{env['platform']}.{godot_cpp_target}{lib_suffix_for_linking}"])
+
+# Sources for extension
+sources = Glob("src/*.cpp")
+
+# Output directory (relative to addons/wfc_native_src/)
+output_dir = "../wfc_native"
+
+# Ensure the output directory exists
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# Build the extension
+if env["platform"] == "macos":
+    library = env.SharedLibrary(
+        f"{output_dir}/libwfc_solver_native.{env['platform']}.{env['target']}.framework/libwfc_solver_native.{env['platform']}.{env['target']}",
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        f"{output_dir}/libwfc_solver_native{lib_suffix}.{env['platform']}.{env['target']}{shared_lib_extension}",
+        source=sources,
+    )
+
+Default(library)
+
+Help("""
+Usage: scons [options]
+
+Options:
+  platform=<platform>  Target platform (windows, linux, macos)
+  target=<target>      Build target (debug, release) [default: release]
+  arch=<architecture>  Target architecture (x86_64, arm64) [default: x86_64]
+
+Examples:
+  scons platform=linux target=release
+  scons platform=windows target=debug
+""")

@@ -39,12 +39,11 @@ script = SubResource("GDScript_sq3cg")
 [node name="generator" type="Node" parent="."]
 script = ExtResource("1_coqxp")
 target = NodePath("../target")
-rect = Rect2i(0, 0, 121, 68)
+rect = Rect2i(0, 0, 64, 64)
 rules = SubResource("Resource_fk53x")
 positive_sample = NodePath("../sample")
 negative_sample = NodePath("../negative_sample")
 multithreaded_runner_settings = SubResource("Resource_uafrt")
-render_intermediate_results = false
 update_interval_ms = 100
 
 [node name="sample" type="TileMap" parent="."]
