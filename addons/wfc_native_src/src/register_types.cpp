@@ -12,6 +12,7 @@
 #include "wfc_solver_native.h"
 #include "wfc_rules_2d_native.h"
 #include "wfc_2d_problem_native.h"
+#include "wfc_multithreaded_runner_native.h"
 
 using namespace godot;
 
@@ -31,6 +32,7 @@ void initialize_wfc_solver_native_module(ModuleInitializationLevel p_level) {
     ClassDB::register_class<WFCRules2DNative>();
     ClassDB::register_class<WFC2DAC4BinaryConstraintNative>();
     ClassDB::register_class<WFC2DProblemNative>();
+    ClassDB::register_class<WFCMultithreadedRunnerNative>();
 }
 
 void uninitialize_wfc_solver_native_module(ModuleInitializationLevel p_level) {

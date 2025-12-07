@@ -91,10 +91,10 @@ Ref<WFCBitMatrixNative> WFCBitMatrixNative::transpose() const {
     for (int y = 0; y < height_; y++) {
         Ref<WFCBitSetNative> row = Object::cast_to<WFCBitSetNative>(rows[y]);
         if (row.is_valid()) {
-            PackedInt64Array bits = row->to_array();
-            for (int i = 0; i < bits.size(); i++) {
-                res->set_bit(y, bits[i], true);
-            }
+            // Use for_each_set_bit to avoid to_array() allocation
+            row->for_each_set_bit([&](int x) {
+                res->set_bit(y, x, true);
+            });
         }
     }
 
@@ -108,16 +108,15 @@ Ref<WFCBitSetNative> WFCBitMatrixNative::transform(const Ref<WFCBitSetNative>& i
 
     if (input.is_null()) return res;
 
-    PackedInt64Array bits = input->to_array();
-    for (int i = 0; i < bits.size(); i++) {
-        int y = bits[i];
+    // Use for_each_set_bit to avoid to_array() allocation
+    input->for_each_set_bit([&](int y) {
         if (y >= 0 && y < height_) {
             Ref<WFCBitSetNative> row = Object::cast_to<WFCBitSetNative>(rows[y]);
             if (row.is_valid()) {
                 res->union_in_place(row);
             }
         }
-    }
+    });
 
     return res;
 }

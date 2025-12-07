@@ -96,6 +96,11 @@ void WFCSolverNative::initialize(const Ref<WFCProblemNative>& problem, const Ref
 }
 
 bool WFCSolverNative::propagate_constraints_ac3() {
+    // Pre-allocate related cells array to avoid repeated reallocations
+    // Use a simple array with linear dedup (faster than Dictionary for small N)
+    PackedInt64Array related;
+    int related_count = 0;
+
     while (true) {
         PackedInt64Array changed = current_state_->extract_changed_cells();
 
@@ -103,7 +108,8 @@ bool WFCSolverNative::propagate_constraints_ac3() {
             return false;
         }
 
-        Dictionary related;
+        // Reset related for this iteration
+        related_count = 0;
 
         // Use get_related_cells to find neighbors of changed cells
         for (int i = 0; i < changed.size(); i++) {
@@ -114,14 +120,27 @@ bool WFCSolverNative::propagate_constraints_ac3() {
             for (int j = 0; j < related_cells.size(); j++) {
                 int related_cell_id = related_cells[j];
                 if (!current_state_->is_cell_solved(related_cell_id)) {
-                    related[related_cell_id] = true;
+                    // Linear dedup check - fast for typical small neighbor counts
+                    bool found = false;
+                    for (int k = 0; k < related_count; k++) {
+                        if (related[k] == related_cell_id) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        if (related_count >= related.size()) {
+                            related.resize(related.size() + 16);
+                        }
+                        related.set(related_count++, related_cell_id);
+                    }
                 }
             }
         }
 
-        Array related_keys = related.keys();
-        for (int i = 0; i < related_keys.size(); i++) {
-            int related_cell_id = related_keys[i];
+        // Process related cells directly without creating keys array
+        for (int i = 0; i < related_count; i++) {
+            int related_cell_id = related[i];
 
             Ref<WFCBitSetNative> new_domain = problem_->compute_cell_domain(
                 current_state_, related_cell_id
@@ -168,7 +187,6 @@ bool WFCSolverNative::propagate_constraints_ac4() {
             state->set_ac4_acknowledged_domains(ac4_acknowledged_domains);
 
             Ref<WFCBitSetNative> delta_bitset = new_domain->xor_with(prev_acknowledged_domain);
-            PackedInt64Array delta = delta_bitset->to_array();
 
             for (int constraint_id = 0; constraint_id < ac4_constraints_.size(); constraint_id++) {
                 Ref<WFCProblemAC4BinaryConstraintNative> constraint = ac4_constraints_[constraint_id];
@@ -180,8 +198,8 @@ bool WFCSolverNative::propagate_constraints_ac4() {
                 Ref<WFCBitSetNative> dependent_domain = cell_domains[dependent_cell];
                 bool dependent_domain_changed = false;
 
-                for (int d = 0; d < delta.size(); d++) {
-                    int this_removed = delta[d];
+                // Use for_each_set_bit instead of to_array() to avoid allocation
+                delta_bitset->for_each_set_bit([&](int this_removed) {
                     PackedInt64Array allowed = constraint->get_allowed(this_removed);
 
                     for (int a = 0; a < allowed.size(); a++) {
@@ -197,7 +215,7 @@ bool WFCSolverNative::propagate_constraints_ac4() {
                             }
                         }
                     }
-                }
+                });
 
                 if (dependent_domain_changed) {
                     if (dependent_domain->is_empty()) {

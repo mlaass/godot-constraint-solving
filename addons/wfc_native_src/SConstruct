@@ -72,7 +72,8 @@ elif env["platform"] == "macos":
     shared_lib_extension = ".dylib"
 
 else:  # Linux
-    env.Append(CCFLAGS=["-std=c++17", "-fexceptions", "-fPIC"])
+    env.Append(CCFLAGS=["-std=c++17", "-fexceptions", "-fPIC", "-pthread"])
+    env.Append(LINKFLAGS=["-pthread"])
     if env["target"] == "debug":
         env.Append(CCFLAGS=["-g", "-O0"])
     else:

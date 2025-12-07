@@ -9,4 +9,4 @@ addons/wfc_native/src/**.os
 addons/wfc_native/**.dylib
 addons/wfc_native/**.dll
 addons/wfc_native_src/**.dblite
-addons/wfc_native_src/**.os
+*.os

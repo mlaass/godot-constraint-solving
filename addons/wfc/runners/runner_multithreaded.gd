@@ -122,8 +122,9 @@ func _start_tasks(max_start: int) -> int:
 ## See [method WFCSolverRunner.start].
 func start(problem: WFCProblem):
   assert(not is_started())
-
-  for sub_problem in problem.split(runner_settings.get_max_threads()):
+  var problems = problem.split(runner_settings.get_max_threads())
+  print("start %d threads -> %d problems" % [runner_settings.get_max_threads(),problems.size()])
+  for sub_problem in problems:
     tasks.append(
       _Task.new(sub_problem.problem, sub_problem.dependencies)
     )

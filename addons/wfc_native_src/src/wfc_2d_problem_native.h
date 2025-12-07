@@ -53,6 +53,12 @@ private:
     TypedArray<WFCBitSetNative> precondition_domains_;  // Per-cell domains (null = full domain)
     PackedInt64Array precondition_solutions_;            // Pre-solved cells (-1 = not solved)
 
+    // For multithreaded solving - rects to read from completed neighbors
+    TypedArray<Rect2i> init_read_rects_;
+
+    // Helper for split()
+    static PackedInt64Array split_range(int first, int size, int partitions, int min_partition_size);
+
 protected:
     static void _bind_methods();
 
@@ -75,12 +81,21 @@ public:
     Rect2i get_edges_rect() const { return edges_rect_; }
     void set_edges_rect(const Rect2i& val) { edges_rect_ = val; }
 
+    TypedArray<Rect2i> get_init_read_rects() const { return init_read_rects_; }
+    void set_init_read_rects(const TypedArray<Rect2i>& val) { init_read_rects_ = val; }
+
     TypedArray<Vector2i> get_axes() const { return axes_; }
     TypedArray<WFCBitMatrixNative> get_axis_matrices() const { return axis_matrices_; }
 
     // Coordinate conversion
     int coord_to_id(const Vector2i& coord) const;
     Vector2i id_to_coord(int id) const;
+
+    // Maximal distances along X and Y axes between a cell and its immediate dependencies
+    Vector2i get_dependencies_range() const;
+
+    // Split problem into sub-problems for parallel solving
+    virtual TypedArray<WFCProblemSubProblemNative> split(int concurrency_limit) override;
 
     // Precondition methods (call before solver initialize)
     void set_precondition_domain(int cell_id, const Ref<WFCBitSetNative>& domain);

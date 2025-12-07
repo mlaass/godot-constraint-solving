@@ -3,6 +3,7 @@ class_name WFC2DGenerator
 extends Node
 
 const WFCNativeSolverRunner = preload("res://addons/wfc/runners/runner_native.gd")
+const WFCNativeMultithreadedSolverRunner = preload("res://addons/wfc/runners/runner_native_multithreaded.gd")
 
 ## A map that will be filled using WFC algorithm.
 @export_node_path("TileMap", "GridMap", "TileMapLayer", "WFC2DLayeredMap")
@@ -77,7 +78,8 @@ var use_multithreading: bool = true
 ## The native solver is faster but requires the native extension to be loaded.
 ## Falls back to GDScript if native extension is not available.
 ## [br]
-## Note: When enabled, [member use_multithreading] is ignored (native solver runs on main thread).
+## When combined with [member use_multithreading], uses native parallel solving
+## which splits the problem and runs sub-solvers in parallel using native threads.
 @export
 var use_native_solver: bool = false
 
@@ -124,11 +126,23 @@ func _is_native_available() -> bool:
        ClassDB.class_exists("WFC2DProblemNative") and \
        ClassDB.class_exists("WFCRules2DNative")
 
+func _is_native_multithreaded_available() -> bool:
+  return _is_native_available() and \
+       ClassDB.class_exists("WFCMultithreadedRunnerNative")
+
 func _create_runner() -> WFCSolverRunner:
   if use_native_solver:
     if not _is_native_available():
       push_warning("Native solver not available, falling back to GDScript")
+    elif use_multithreading and _is_native_multithreaded_available():
+      # Use native multithreaded runner
+      var res: WFCNativeMultithreadedSolverRunner = WFCNativeMultithreadedSolverRunner.new()
+      if multithreaded_runner_settings != null:
+        res.runner_settings = multithreaded_runner_settings
+      res.solver_settings = solver_settings
+      return res
     else:
+      # Use native single-threaded runner
       var res: WFCNativeSolverRunner = WFCNativeSolverRunner.new()
       if main_thread_runner_settings != null:
         res.runner_settings = main_thread_runner_settings

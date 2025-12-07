@@ -69,44 +69,8 @@ int64_t WFCBitSetNative::n_bits_set(int n) {
 
 int WFCBitSetNative::get_first_set_bit_index(int64_t bits) {
     if (bits == 0) return -1;
-
-    if (bits < 0) {
-        // Negative number => highest bit is set
-        return BITS_PER_INT - 1;
-    }
-
-    int res = (BITS_PER_INT >> 1) - 1;
-    int step = BITS_PER_INT >> 2;
-
-    while (true) {
-        int64_t mask = 1LL << res;
-
-        if ((bits & mask) != 0) {
-            return res;
-        }
-
-        if (mask < bits) {
-            res += step;
-        } else {
-            res -= step;
-        }
-
-        step = step >> 1;
-        if (step == 0) step = 1;
-        if (res < 0) res = 0;
-        if (res >= BITS_PER_INT) res = BITS_PER_INT - 1;
-
-        // Fallback: linear search if binary search fails
-        if (step <= 1) {
-            for (int i = 0; i < BITS_PER_INT; i++) {
-                if (bits & (1LL << i)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-    }
-    return -1;
+    // Use __builtin_ctzll for O(1) first set bit lookup (compiles to BSF/TZCNT instruction)
+    return __builtin_ctzll(static_cast<uint64_t>(bits));
 }
 
 bool WFCBitSetNative::is_pot(int64_t x) {
@@ -435,11 +399,24 @@ int64_t WFCBitSetNative::get_elem(int n) const {
 
 PackedInt64Array WFCBitSetNative::to_array() const {
     PackedInt64Array res;
+    // Pre-estimate capacity based on popcount for fewer reallocations
+    int estimated = count_set_bits(size_);
+    res.resize(estimated);
+    int count = 0;
 
-    for (int i = 0; i < size_; i++) {
-        if (get_bit(i)) {
-            res.append(i);
+    // Use optimized bit iteration with __builtin_ctzll
+    for_each_set_bit([&](int bit) {
+        if (count < estimated) {
+            res.set(count, bit);
+        } else {
+            res.append(bit);
         }
+        count++;
+    });
+
+    // Resize to actual count (in case estimate was wrong)
+    if (count < estimated) {
+        res.resize(count);
     }
 
     return res;

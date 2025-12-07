@@ -70,6 +70,42 @@ public:
     int count_set_bits(int pass_if_more_than = 2147483647) const;
     String format_bits() const;
 
+    // High-performance bit iteration (template for internal C++ use)
+    // Calls callback(int bit_index) for each set bit, using __builtin_ctzll
+    template<typename Func>
+    void for_each_set_bit(Func&& callback) const {
+        // Process data0
+        uint64_t word = static_cast<uint64_t>(data0);
+        while (word) {
+            int bit = __builtin_ctzll(word);  // Count trailing zeros - O(1)
+            callback(bit);
+            word &= word - 1;  // Clear lowest set bit
+        }
+
+        // Process data1 if size > 64
+        if (size_ > 64) {
+            word = static_cast<uint64_t>(data1);
+            while (word) {
+                int bit = __builtin_ctzll(word);
+                callback(64 + bit);
+                word &= word - 1;
+            }
+        }
+
+        // Process dataX if size > 128
+        if (size_ > 128) {
+            for (int i = 0; i < dataX.size(); i++) {
+                word = static_cast<uint64_t>(dataX[i]);
+                int base = 128 + i * 64;
+                while (word) {
+                    int bit = __builtin_ctzll(word);
+                    callback(base + bit);
+                    word &= word - 1;
+                }
+            }
+        }
+    }
+
     // Property getters/setters
     int64_t get_data0() const { return data0; }
     void set_data0(int64_t val) { data0 = val; }
