@@ -44,6 +44,7 @@ rules = SubResource("Resource_fk53x")
 positive_sample = NodePath("../sample")
 negative_sample = NodePath("../negative_sample")
 multithreaded_runner_settings = SubResource("Resource_uafrt")
+use_native_solver = true
 update_interval_ms = 100
 
 [node name="sample" type="TileMap" parent="."]

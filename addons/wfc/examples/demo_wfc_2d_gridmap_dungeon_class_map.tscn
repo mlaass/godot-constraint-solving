@@ -31,37 +31,12 @@ func _on_generator_done():
 
 [sub_resource type="Resource" id="Resource_3csuy"]
 script = ExtResource("5_qumw0")
-complete_matrices = true
-axes = Array[Vector2i]([Vector2i(0, 1), Vector2i(1, 0)])
-axis_matrices = Array[ExtResource("3_g0c7q")]([])
-probabilities = []
-probabilities_enabled = true
-edge_condition_meta_name = "wfc_edge"
 
 [sub_resource type="Resource" id="Resource_mtj5f"]
 script = ExtResource("6_uls1f")
-allow_backtracking = true
-require_backtracking = false
-backtracking_limit = -1
-sparse_history_start = 10
-sparse_history_interval = 10
-force_ac3 = true
 
 [sub_resource type="Resource" id="Resource_7i8ha"]
 script = ExtResource("7_gllx8")
-wall_border_size = Vector2i(1, 2)
-free_gap = Vector2i(2, 2)
-room_half_size_base = Vector2i(2, 2)
-room_half_size_variation = Vector2i(2, 2)
-room_probability = 0.5
-road_len_base = 15
-road_len_variation = 5
-fork_probability = 0.5
-full_fork_probability = 0.5
-passable_area_ratio = 0.1
-iterations_limit = 1000
-road_class = "wfc_dungeon_road"
-wall_class = "wfc_dungeon_wall"
 classes_map = NodePath("../class_map")
 
 [node name="test_gm" type="Node3D"]
@@ -104,6 +79,7 @@ rules = SubResource("Resource_3csuy")
 positive_sample = NodePath("../sample")
 solver_settings = SubResource("Resource_mtj5f")
 precondition = SubResource("Resource_7i8ha")
+use_native_solver = true
 render_intermediate_results = true
 
 [node name="controls" parent="." instance=ExtResource("6_21eh3")]

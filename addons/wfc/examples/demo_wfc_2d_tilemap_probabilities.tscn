@@ -18,16 +18,10 @@ func _ready():
 
 [sub_resource type="Resource" id="Resource_uafrt"]
 script = ExtResource("2_dcepd")
-max_threads = -1
 
 [sub_resource type="Resource" id="Resource_1bxw1"]
 script = ExtResource("3_h6f3l")
-complete_matrices = true
-axes = Array[Vector2i]([Vector2i(0, 1), Vector2i(1, 0)])
-axis_matrices = Array[ExtResource("3_j1j0w")]([])
-probabilities = []
 probabilities_enabled = false
-edge_condition_meta_name = "wfc_edge"
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a0nja"]
 bg_color = Color(0.6, 0.6, 0.6, 0.843137)
@@ -41,6 +35,7 @@ target = NodePath("../target")
 rect = Rect2i(1, 1, 58, 66)
 positive_sample = NodePath("../sample")
 multithreaded_runner_settings = SubResource("Resource_uafrt")
+use_native_solver = true
 render_intermediate_results = true
 
 [node name="generator_without_probabilities" type="Node" parent="."]
@@ -50,6 +45,7 @@ rect = Rect2i(61, 1, 58, 66)
 rules = SubResource("Resource_1bxw1")
 positive_sample = NodePath("../sample")
 multithreaded_runner_settings = SubResource("Resource_uafrt")
+use_native_solver = true
 render_intermediate_results = true
 
 [node name="sample" type="TileMap" parent="."]

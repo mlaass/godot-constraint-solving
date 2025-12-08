@@ -10,6 +10,7 @@ script = ExtResource("1_73cd8")
 target = NodePath("../target")
 rect = Rect2i(0, 0, 121, 68)
 positive_sample = NodePath("../sample")
+use_native_solver = true
 start_on_ready = true
 print_rules = true
 
